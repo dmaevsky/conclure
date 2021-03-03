@@ -1,0 +1,35 @@
+{
+  "name": "conclure",
+  "version": "1.0.0",
+  "description": "Generator runner",
+  "main": "src/conclude.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "ava -v"
+  },
+  "ava": {
+    "files": [
+      "tests/**/*"
+    ],
+    "require": [
+      "esm"
+    ]
+  },
+  "keywords": [
+    "generator",
+    "runner",
+    "saga",
+    "yield",
+    "promise",
+    "async",
+    "await"
+  ],
+  "author": "Dmitry Maevsky",
+  "license": "MIT",
+  "devDependencies": {
+    "ava": "^3.15.0",
+    "esm": "^3.2.25"
+  }
+}
