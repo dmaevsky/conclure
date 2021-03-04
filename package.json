@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "description": "Generator runner",
   "main": "src/conclude.js",
+  "module": "src/conclude.js",
+  "types": "conclude.d.ts",
   "directories": {
     "test": "tests"
   },
