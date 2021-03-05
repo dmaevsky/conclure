@@ -1,6 +1,6 @@
 import test from 'ava';
-import { conclude, inProgress } from '../src/conclude';
-import { cps, call } from '../src/effects';
+import { conclude, inProgress, getResult } from '../src/conclude';
+import { cps, cps_no_cancel, call } from '../src/effects';
 
 test('cps', async t => {
   let r = null;
@@ -11,19 +11,17 @@ test('cps', async t => {
   }
 
   function* run(input) {
-    return yield cps(plus42, input);
+    return cps(plus42, input);
   }
 
   const it = run(100);
   conclude(it, (error, result) => r = { error, result });
 
   t.true(inProgress(it));
-  t.truthy(promise);
-
   await promise;
-
   t.false(inProgress(it));
-  t.deepEqual(r, { error: null, result: 142});
+
+  t.deepEqual(r, { error: null, result: 142 });
 });
 
 test('call', async t => {
@@ -35,17 +33,54 @@ test('call', async t => {
   }
 
   function* run(input) {
-    return yield call(plus42, input);
+    return call(plus42, input);
   }
 
   const it = run(100);
   conclude(it, (error, result) => r = { error, result });
 
   t.true(inProgress(it));
-  t.truthy(promise);
+  await promise;
+  t.false(inProgress(it));
+
+  t.deepEqual(r, { error: null, result: 142 });
+});
+
+test('cps_no_cancel', async t => {
+  let r = null;
+  let promise;
+
+  function plus42(n, callback) {
+    promise = Promise.resolve(n + 42).then(r => callback(null, r));
+  }
+
+  const it = cps_no_cancel(plus42, 100);
+  conclude(it, (error, result) => r = { error, result });
+
+  t.true(inProgress(it));
+  await promise;
+  t.false(inProgress(it));
+
+  t.deepEqual(r, { error: null, result: 142 });
+});
+
+test('cps_no_cancel, cancelling', async t => {
+  let r = null;
+  let promise;
+
+  function plus42(n, callback) {
+    promise = Promise.resolve(n + 42).then(r => callback(null, r));
+  }
+
+  const it = cps_no_cancel(plus42, 100);
+  const cancel = conclude(it, (error, result) => r = { error, result });
+
+  t.true(inProgress(it));
+  cancel();
+  t.false(inProgress(it));
 
   await promise;
 
-  t.false(inProgress(it));
-  t.deepEqual(r, { error: null, result: 142});
+  t.is(r, null);
+  t.deepEqual(getResult(it), { cancelled: true });
 });
