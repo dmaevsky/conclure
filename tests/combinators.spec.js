@@ -1,9 +1,9 @@
 import test from 'ava';
-import { conclude, inProgress } from '../src/conclude';
+import { conclude, inProgress, getResult } from '../src/conclude';
 import { delay } from '../src/effects';
 import * as Conclude from '../src/combinators';
 
-test('conclude all', async t => {
+test('all', async t => {
   let r = null;
   const promise = Promise.resolve();
 
@@ -13,16 +13,32 @@ test('conclude all', async t => {
   }
 
   function* run(data) {
-    return yield Conclude.all(data.map(processItem));
+    return Conclude.all(data.map(processItem));
   }
 
-  const it = run(['foo', 'bar', 'baz']);
-  conclude(it, (error, result) => r = { error, result });
+  const flow = run(['foo', 'bar', 'baz']);
+  conclude(flow, (error, result) => r = { error, result });
 
-  t.true(inProgress(it));
-
+  t.true(inProgress(flow));
   await promise;
+  t.false(inProgress(flow));
 
-  t.false(inProgress(it));
   t.deepEqual(r, { error: null, result: ['FOO', 'BAR', 'BAZ']});
+});
+
+test('race', async t => {
+  const promise = Promise.resolve(42);
+
+  const flow = Conclude.race({
+    slow: delay(1000),
+    fast: promise
+  });
+
+  conclude(flow, e => e);
+
+  t.true(inProgress(flow));
+  await promise;
+  t.false(inProgress(flow));
+
+  t.deepEqual(getResult(flow).result, { fast: 42 });
 });

@@ -54,3 +54,7 @@ declare module 'conclure/effects' {
   export function delay(ms: number, callback: Continuation<void>): Cancellation;
   export function delay(ms: number): Effect<void, 'CPS'>;
 }
+
+declare module 'conclure/combinators' {
+  type Payload = Flow<unknown>[] | Record<keyof any, Flow<unknown>>;
+}
