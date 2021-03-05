@@ -30,6 +30,10 @@ export function finished(it) {
   return resultCache.has(it);
 }
 
+export function getResult(it) {
+  return resultCache.get(it);
+}
+
 export function whenFinished(it, callback) {
   if (!asyncType(it)) {
     callback({ result: it });

@@ -2,9 +2,9 @@ type Continuation<TResult> = (error: Error | null, result?: TResult) => void
 type Cancellation = () => void;
 
 type FinishedState<TResult> = {
-  cancelled: boolean;
-  error: Error;
-  result: TResult;
+  cancelled?: boolean;
+  error?: Error;
+  result?: TResult;
 }
 
 type CPS<TResult> = [...unknown[], Continuation<TResult>];
@@ -27,7 +27,7 @@ type Effect<TResult, T extends EffectType> = {
   args: any[];
 };
 
-type AsyncConcludable<TResult> = PromiseLike<TResult> | Iterator<any, TResult> | Effect<TResult, EffectType>;
+type Flow<TResult> = PromiseLike<TResult> | Iterator<any, TResult> | Effect<TResult, EffectType>;
 
 type CallableTarget<T extends Function> = T | [object, string | T];
 
@@ -35,16 +35,16 @@ declare module 'conclure' {
   export function isIterator(obj: any): obj is Iterator<any, unknown>;
   export function isPromise(obj: any): obj is PromiseLike<unknown>;
 
-  export function inProgress<TResult>(it: AsyncConcludable<TResult>): boolean;
-  export function finished<TResult>(it: AsyncConcludable<TResult>): boolean;
+  export function inProgress<TResult>(it: Flow<TResult>): boolean;
+  export function finished<TResult>(it: Flow<TResult>): boolean;
+  export function getResult<TResult>(it: Flow<TResult>): FinishedState<TResult>;
 
-  export function conclude<TResult>(it: TResult | AsyncConcludable<TResult>, callback: Continuation<TResult>): Cancellation;
+  export function conclude<TResult>(it: TResult | Flow<TResult>, callback: Continuation<TResult>): Cancellation;
 
-  export function whenFinished<TResult>(it: TResult | AsyncConcludable<TResult>, callback: (state: FinishedState<TResult>) => void): Cancellation;
+  export function whenFinished<TResult>(it: TResult | Flow<TResult>, callback: (state: FinishedState<TResult>) => void): Cancellation;
 }
 
 declare module 'conclure/effects' {
-
   export function isEffect(effect: any): effect is Effect<unknown, EffectType>;
 
   export function cps<TResult>(fn: CallableTarget<CPSFunction<TResult>>, ...args: unknown[]): Effect<TResult, 'CPS'>
