@@ -1,7 +1,7 @@
-export const TYPE = Symbol.for('@@conclude-effect');
+export const TYPE = '@@conclude-effect';
 export const isEffect = effect => Boolean(effect && effect[TYPE]);
 
-const effect = (type, fn, ...args) => {
+const makeEffect = (type, fn, ...args) => {
   let context = null;
 
   if (Array.isArray(fn)) {
@@ -15,8 +15,9 @@ const effect = (type, fn, ...args) => {
   };
 }
 
-export const cps = effect.bind(null, 'CPS');
-export const call = effect.bind(null, 'CALL');
+export const cps = makeEffect.bind(null, 'CPS');
+export const cps_no_cancel = makeEffect.bind(null, 'CPS_NO_CANCEL');
+export const call = makeEffect.bind(null, 'CALL');
 
 export function delay(ms, callback) {
   if (!callback) return cps(delay, ms);

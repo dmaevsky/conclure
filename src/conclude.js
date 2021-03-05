@@ -8,42 +8,67 @@ export function isPromise(obj) {
   return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
 }
 
+const asyncType = it => [isPromise, isEffect, isIterator].find(is => is(it));
+
+const runners = new Map([
+  [isPromise, runPromise],
+  [isEffect, runEffect],
+  [isIterator, runIterator],
+]);
+
 const noop = () => {};
 
-const running = new Map();
+const running = new WeakMap();
 const resultCache = new WeakMap();
+const finishWatchers = new WeakMap();
 
 export function inProgress(it) {
   return running.has(it);
 }
 
-export function concluded(it) {
+export function finished(it) {
   return resultCache.has(it);
 }
 
+export function whenFinished(it, callback) {
+  if (!asyncType(it)) {
+    callback({ result: it });
+    return noop;
+  }
+
+  if (resultCache.has(it)) {
+    callback(resultCache.get(it));
+    return noop;
+  }
+
+  let watchers = finishWatchers.get(it);
+
+  if (!watchers) finishWatchers.set(it, watchers = new Set([callback]));
+  else watchers.add(callback);
+
+  return () => watchers.delete(callback);
+}
+
+function finalize(it, payload) {
+  resultCache.set(it, payload);
+  running.delete(it);
+
+  for (let cb of finishWatchers.get(it) || []) cb(payload);
+  finishWatchers.delete(it);
+}
+
 export function conclude(it, callback) {
-  if (isPromise(it)) {
-    let cancelled = false;
+  const type = asyncType(it);
 
-    it.then(result => !cancelled && callback(null, result))
-      .catch(error => !cancelled && callback(error));
-
-    return () => cancelled = true;
-  }
-
-  if (isEffect(it)) {
-    return runEffect(it, callback);
-  }
-
-  if (!isIterator(it)) {
+  if (!type) {
     callback(null, it);
     return noop;
   }
 
-  // At this point it is an iterator
-
   if (resultCache.has(it)) {
-    const { result, error } = resultCache.get(it);
+    const { result, error, cancelled } = resultCache.get(it);
+
+    if (cancelled) return noop;
 
     if (error) callback(error);
     else callback(null, result);
@@ -52,90 +77,70 @@ export function conclude(it, callback) {
   }
 
   if (running.has(it)) {
-    const { subscribe } = running.get(it);
+    const subscribe = running.get(it);
     return subscribe(callback);
   }
 
-  return start(it, callback);
-}
-
-function start(it, callback) {
-  // it is an iterator that has not stared yet
-
-  const watchers = new Set();
-  const cancelWatchers = new Set();
+  const subscribers = new Set();
+  let cancel;
 
   const onConclude = (error, result) => {
-    resultCache.set(it, { error, result });
-    running.delete(it);
+    finalize(it, { error, result });
 
-    for (let cb of watchers) cb(error, result);
+    for (let cb of subscribers) cb(error, result);
   }
 
   function subscribe(cb) {
-    watchers.add(cb);
+    subscribers.add(cb);
 
     return function unsubscribe() {
-      watchers.delete(cb);
+      subscribers.delete(cb);
 
-      if (running.has(it) && watchers.size === 0) {
-        const { cancel } = running.get(it);
-        running.delete(it);
-
-        if (typeof cancel === 'function') cancel();
-
-        for (let cb of cancelWatchers) cb();
+      if (subscribers.size === 0) {
+        finalize(it, { cancelled: true });
+        cancel();
       }
     }
   }
 
-  function subscribeCancel(cb) {
-    cancelWatchers.add(cb);
-    return () => cancelWatchers.delete(cb);
-  }
-
-  running.set(it, {
-    subscribe,
-    subscribeCancel
-  });
+  running.set(it, subscribe);
 
   const unsubscribe = subscribe(callback);
 
-  iterate(it, null, null, onConclude);
+  cancel = runners.get(type)(it, onConclude);
+
   return unsubscribe;
 }
 
-function iterate(it, error, result, callback) {
-  const runRecord = running.get(it);
-  if (!runRecord) return;
+function runPromise(promise, callback) {
+  let cancelled = false;
 
-  try {
-    runRecord.cancel = noop;
+  promise
+    .then(result => !cancelled && callback(null, result))
+    .catch(error => !cancelled && callback(error));
 
-    const { value, done } = error
-      ? it.throw(error)
-      : it.next(result);
-
-    if (running.get(it) !== runRecord) return; // synchronously cancelled while generator was running
-
-    const continuation = (err, res) => iterate(it, err, res, callback);
-
-    runRecord.cancel = conclude(value, done ? callback : continuation);
-  }
-  catch (err) {
-    callback(err);
-  }
+  return () => cancelled = true;
 }
 
 function runEffect({ [TYPE]: type, context, fn, args }, callback) {
-  if (type === 'CPS') {
-    return fn.call(context, ...args, callback);
-  }
-
-  // type === 'CALL'
   try {
-    const result = fn.apply(context, args);
-    return conclude(result, callback);
+    switch (type) {
+      case 'CPS':
+        return fn.call(context, ...args, callback);
+
+      case 'CPS_NO_CANCEL':
+        let cancelled = false;
+        fn.call(context, ...args, (error, result) => !cancelled && callback(error, result));
+
+        return () => cancelled = true;
+
+      case 'CALL':
+        const result = fn.apply(context, args);
+        return conclude(result, callback);
+
+      default:
+        throw new Error('Unknown effect type ' + type);
+    }
   }
   catch (error) {
     callback(error);
@@ -143,12 +148,27 @@ function runEffect({ [TYPE]: type, context, fn, args }, callback) {
   }
 }
 
-export function onCancel(it, callback) {
-  if (!running.has(it)) {
-    if (!resultCache.has(it)) callback();   // already cancelled (or never started)
-    return noop;
+function runIterator(it, callback) {
+  let cancel;
+
+  function iterate(error, result) {
+    try {
+      let cancelled = false;
+      cancel = () => cancelled = true;
+
+      const { value, done } = error
+        ? it.throw(error)
+        : it.next(result);
+
+      if (cancelled) return;
+
+      cancel = conclude(value, done ? callback : iterate);
+    }
+    catch (err) {
+      callback(err);
+    }
   }
 
-  const { subscribeCancel } = running.get(it);
-  return subscribeCancel(callback);
+  iterate();
+  return () => cancel();
 }
