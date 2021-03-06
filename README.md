@@ -30,7 +30,7 @@ const cancel = conclude(loadAll(myDocs), (err, contents) => {
 cancel();
 
 ```
-You can yield / conclude iterators, promises, and effects interchangeably, so you can gradually introduce cancellation and testability to your async flows.
+You can yield/conclude iterators, promises, and effects interchangeably, so you can gradually introduce cancellation and testability to your async flows.
 
 
 ## Design concepts and rationale
@@ -38,12 +38,12 @@ You should avoid Promises for two major reasons:
 - Promises are *greedy*: once created, cannot be cancelled
 - `await promise` **always** inserts a *tick* into your async flow, even if the promise is already resolved or can be resolved synchronously.
 
-You can actually see a `Promise` as a particular type of an iterator for which the JS VM provides a built-in runner, a quite poorly designed one nonetheless.
+You can see a `Promise` as a particular type of an iterator for which the JS VM provides a built-in runner, a quite poorly designed one nonetheless.
 
 **⤕ Conclure JS** is a custom generator runner that
 - allows you to cancel your async flows
 - ensures that sync flows always resolve synchronously
-- delivers better testability through use of *effects* as popularized by [redux-saga](https://redux-saga.js.org/docs/basics/DeclarativeEffects.html).
+- delivers better testability through the use of *effects* as popularized by [redux-saga](https://redux-saga.js.org/docs/basics/DeclarativeEffects.html).
 
 ### Terminology and semantics
 An async flow may be represented by *any* of the three base concepts:
@@ -65,7 +65,7 @@ The root flow may be concluded by calling `conclude` explicitly, which itself is
 
 `conclude` returns a `cancel` function that cancels the top-level flow. A child flow would then be cancelled if **all** of its parents are cancelled.
 
-Unlike redux-saga Conclure does not call `.return` with some "magic" value on the iterator. It simply attempts to cancel the currently pending operation and stops iterating the iterator.
+Unlike redux-saga, Conclure does not call `.return` with some "magic" value on the iterator. It simply attempts to cancel the currently pending operation and stops iterating the iterator.
 
 A flow is considered *finished* when it is either *concluded* (with a *result* or an *error*) or *cancelled*.
 
@@ -81,7 +81,7 @@ An effect is simply an abstracted declarative (lazy) function call: it is a simp
 
 - A `CPS` effect, when concluded, will call `fn.call(context, ...args, callback)`, and resolve or reject when the callback is called. `fn` **must** return a cancellation. Create a `CPS` effect using `cps(fn, ...args)`. If `fn` requires `this`, you can pass the context as `cps([context, fn], ...args)`.
 
-To call third party CPS functions that do not return a cancellation, use the `cps_no_cancel` effect instead.
+To call third-party CPS functions that do not return a cancellation, use the `cps_no_cancel` effect instead.
 
 **`delay(ms)`**
 
@@ -91,7 +91,7 @@ To call third party CPS functions that do not return a cancellation, use the `cp
 ```js
 import * as Conclude from 'conclure/combinators';
 ```
-`Conclude.[all|any|race|allSettled]` combinators would basically do the same thing as their `Promise` counterparts, except that the payload may be an `Iterable` or an object.
+`Conclude.[all|any|race|allSettled]` combinators would do the same thing as their `Promise` counterparts, except that they operate on all types of flows supported by ConclureJS: promises, iterators, or effects. All other values are concluded as themselves. The payload argument may be an `Iterable` or an object.
 
 Combinator conclude behavior summary:
 
