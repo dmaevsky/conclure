@@ -56,5 +56,17 @@ declare module 'conclure/effects' {
 }
 
 declare module 'conclure/combinators' {
-  type Payload = Flow<unknown>[] | Record<keyof any, Flow<unknown>>;
+  type CombinatorResult<T extends object> = T extends any[] ? unknown[] : Record<keyof any, unknown>
+
+  type Combinator<T extends object> = (payload: T, callback?: Continuation<CombinatorResult<T>>) => Cancellation | Effect<CombinatorResult<T>, 'CPS'>;
+
+  type Combinators = {
+    all: Combinator<unknown>;
+    any: Combinator<unknown>;
+    race: Combinator<unknown>;
+    allSettled: Combinator<unknown>;
+  }
+
+  declare const combinators: Combinators;
+  export default combinators;
 }

@@ -3,19 +3,8 @@ import { cps } from './effects';
 
 const noop = () => {};
 
-function returnResults(finishedStates, callback) {
-  const results = Array.isArray(finishedStates) ? [] : {};
-
-  for (let k in finishedStates) results[k] = finishedStates[k].result;
-  callback(null, results);
-}
-
-function throwErrors(finishedStates, callback) {
-  const errors = Array.isArray(finishedStates) ? [] : {};
-
-  for (let k in finishedStates) errors[k] = finishedStates[k].error;
-  callback(errors);
-}
+const returnResults = (_, results, callback) => callback(null, results);
+const throwErrors = (errors, _, callback) => callback(errors);
 
 const afterOne = {
   all: (error, result) => ({ error, result, stop: error }),
@@ -34,11 +23,13 @@ const afterAll = {
 const combinator = pattern => function (payload, callback) {
   if (!callback) return cps(combinators[pattern], payload);
 
-  const finishedStates = Array.isArray(payload) ? [] : {};
+  const results = Array.isArray(payload) ? [] : {};
+  const errors = Array.isArray(payload) ? [] : {};
+
   let count = Object.keys(payload).length;
 
   if (count === 0) {
-    afterAll[pattern](finishedStates, callback);
+    afterAll[pattern](errors, results, callback);
     return noop;
   }
 
@@ -69,9 +60,11 @@ const combinator = pattern => function (payload, callback) {
         else callback(null, Array.isArray(payload) ? result : { [k]: result });
       }
       else {
-        finishedStates[k] = { error, result };
+        results[k] = result;
+        errors[k] = error;
+
         if (--count === 0) {
-          afterAll[pattern](finishedStates, callback);
+          afterAll[pattern](errors, results, callback);
         }
       }
     });
