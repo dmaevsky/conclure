@@ -84,3 +84,17 @@ test('cps_no_cancel, cancelling', async t => {
   t.is(r, null);
   t.deepEqual(getResult(it), { cancelled: true });
 });
+
+test.cb('call, throwing', t => {
+  const boom = () => { throw 'BOOM'; }
+
+  function* g() {
+    try {
+      yield call(boom);
+    }
+    catch (err) {
+      t.is(err, 'BOOM');
+    }
+  }
+  conclude(g(), t.end);
+});

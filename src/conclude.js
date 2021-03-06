@@ -5,10 +5,10 @@ export function isIterator(obj) {
 }
 
 export function isPromise(obj) {
-  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function';
+  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function' && typeof obj.catch === 'function';
 }
 
-const asyncType = it => [isPromise, isEffect, isIterator].find(is => is(it));
+const isFlow = it => [isPromise, isEffect, isIterator].find(is => is(it));
 
 const runners = new Map([
   [isPromise, runPromise],
@@ -35,7 +35,7 @@ export function getResult(it) {
 }
 
 export function whenFinished(it, callback) {
-  if (!asyncType(it)) {
+  if (!isFlow(it)) {
     callback({ result: it });
     return noop;
   }
@@ -62,9 +62,9 @@ function finalize(it, payload) {
 }
 
 export function conclude(it, callback) {
-  const type = asyncType(it);
+  const flowType = isFlow(it);
 
-  if (!type) {
+  if (!flowType) {
     callback(null, it);
     return noop;
   }
@@ -111,7 +111,7 @@ export function conclude(it, callback) {
 
   const unsubscribe = subscribe(callback);
 
-  cancel = runners.get(type)(it, onConclude);
+  cancel = runners.get(flowType)(it, onConclude);
 
   return unsubscribe;
 }

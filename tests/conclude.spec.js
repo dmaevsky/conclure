@@ -18,6 +18,22 @@ test('conclude generator sync', t => {
   t.deepEqual(r, { error: null, result: 42 });
 });
 
+test.cb('throwing sync', t => {
+  function* boom() {
+    throw 'BOOM';
+  }
+
+  function* g() {
+    try {
+      yield boom();
+    }
+    catch (err) {
+      t.is(err, 'BOOM');
+    }
+  }
+  conclude(g(), t.end);
+});
+
 test('simultaneous conclude', async t => {
   let r1 = null, r2 = null;
   const promise = Promise.resolve();

@@ -1,142 +1,84 @@
-import { conclude } from './conclude';
+import { conclude, isPromise } from './conclude';
 import { cps } from './effects';
 
-export function all(payload, callback) {
-  if (!callback) return cps(all, payload);
+const noop = () => {};
 
-  const results = Array.isArray(payload) ? [] : {};
+function returnResults(finishedStates, callback) {
+  const results = Array.isArray(finishedStates) ? [] : {};
 
+  for (let k in finishedStates) results[k] = finishedStates[k].result;
+  callback(null, results);
+}
+
+function throwErrors(finishedStates, callback) {
+  const errors = Array.isArray(finishedStates) ? [] : {};
+
+  for (let k in finishedStates) errors[k] = finishedStates[k].error;
+  callback(errors);
+}
+
+const afterOne = {
+  all: (error, result) => ({ error, result, stop: error }),
+  any: (error, result) => ({ error, result, stop: !error }),
+  race: (error, result) => ({ error, result, stop: true }),
+  allSettled: (error, result) => ({ result: error ? { error } : { result }, stop: false }),
+};
+
+const afterAll = {
+  all: returnResults,
+  any: throwErrors,
+  race: noop,
+  allSettled: returnResults
+};
+
+const combinator = pattern => function (payload, callback) {
+  if (!callback) return cps(combinators[pattern], payload);
+
+  const finishedStates = Array.isArray(payload) ? [] : {};
   let count = Object.keys(payload).length;
 
-  if (!count) {
-    callback(null, results);
+  if (count === 0) {
+    afterAll[pattern](finishedStates, callback);
     return noop;
   }
 
-  let syncStop = false;
-  const watchers = new Set();
+  let stopKey = undefined;
+  const cancellations = {}
 
-  const cancel = () => {
-    for (let stop of watchers) stop();
+  const cancelOthers = () => {
+    for (let k in cancellations) {
+      if (k !== stopKey) cancellations[k]();
+    }
   }
 
   for (let k in payload) {
-    watchers.add(conclude(payload[k], (error, result) => {
-      if (error) {
-        syncStop = true;
-        cancel();
-        callback(Array.isArray(payload) ? error : { [k]: error });
+    if (stopKey !== undefined) {
+      // Prevent unhandled rejections when stopped synchronously
+      if (isPromise(payload[k])) payload[k].catch(noop);
+      continue;
+    }
+
+    cancellations[k] = conclude(payload[k], (err, res) => {
+      const { stop, error, result } = afterOne[pattern](err, res);
+
+      if (stop) {
+        stopKey = k;
+        cancelOthers();
+
+        if (error) callback(Array.isArray(payload) ? error : { [k]: error });
+        else callback(null, Array.isArray(payload) ? result : { [k]: result });
       }
       else {
-        results[k] = result;
-        if (--count === 0) callback(null, results);
+        finishedStates[k] = { error, result };
+        if (--count === 0) {
+          afterAll[pattern](finishedStates, callback);
+        }
       }
-    }));
-
-    if (syncStop) return noop;
+    });
   }
-
-  return cancel;
+  return stopKey !== undefined ? noop : cancelOthers;
 }
 
-export function race(payload, callback) {
-  if (!callback) return cps(race, payload);
+const combinators = Object.fromEntries(Object.keys(afterAll).map(k => [k, combinator(k)]));
 
-  if (!Object.keys(payload).length) {
-    return noop;
-  }
-
-  let syncStop = false;
-  const watchers = new Set();
-
-  const cancel = () => {
-    for (let stop of watchers) stop();
-  }
-
-  for (let k in payload) {
-    watchers.add(conclude(payload[k], (error, result) => {
-      syncStop = true;
-      cancel();
-
-      if (error) {
-        callback(Array.isArray(payload) ? error : { [k]: error });
-      }
-      else {
-        callback(null, Array.isArray(payload) ? result : { [k]: result });
-      }
-    }));
-
-    if (syncStop) return noop;
-  }
-
-  return cancel;
-}
-
-export function allSettled(payload, callback) {
-  if (!callback) return cps(allSettled, payload);
-
-  const results = Array.isArray(payload) ? [] : {};
-
-  let count = Object.keys(payload).length;
-
-  if (!count) {
-    callback(null, results);
-    return noop;
-  }
-
-  const watchers = new Set();
-
-  const cancel = () => {
-    for (let stop of watchers) stop();
-  }
-
-  for (let k in payload) {
-    watchers.add(conclude(payload[k], (error, result) => {
-      results[k] = error
-        ? { error }
-        : { result };
-
-      if (--count === 0) callback(null, results);
-    }));
-  }
-
-  return cancel;
-}
-
-export function any(payload, callback) {
-  if (!callback) return cps(any, payload);
-
-  const errors = Array.isArray(payload) ? [] : {};
-
-  let count = Object.keys(payload).length;
-
-  if (!count) {
-    callback(errors);
-    return noop;
-  }
-
-  let syncStop = false;
-  const watchers = new Set();
-
-  const cancel = () => {
-    for (let stop of watchers) stop();
-  }
-
-  for (let k in payload) {
-    watchers.add(conclude(payload[k], (error, result) => {
-      if (!error) {
-        syncStop = true;
-        cancel();
-        callback(null, Array.isArray(payload) ? result : { [k]: result });
-      }
-      else {
-        errors[k] = error;
-        if (--count === 0) callback(errors);
-      }
-    }));
-
-    if (syncStop) return noop;
-  }
-
-  return cancel;
-}
+export default combinators;

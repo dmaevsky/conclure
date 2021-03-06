@@ -1,9 +1,9 @@
-type Continuation<TResult> = (error: Error | null, result?: TResult) => void
+type Continuation<TResult> = (error: unknown | null, result?: TResult) => void
 type Cancellation = () => void;
 
 type FinishedState<TResult> = {
   cancelled?: boolean;
-  error?: Error;
+  error?: unknown;
   result?: TResult;
 }
 
@@ -27,13 +27,13 @@ type Effect<TResult, T extends EffectType> = {
   args: any[];
 };
 
-type Flow<TResult> = PromiseLike<TResult> | Iterator<any, TResult> | Effect<TResult, EffectType>;
+type Flow<TResult> = Promise<TResult> | Iterator<any, TResult> | Effect<TResult, EffectType>;
 
 type CallableTarget<T extends Function> = T | [object, string | T];
 
 declare module 'conclure' {
   export function isIterator(obj: any): obj is Iterator<any, unknown>;
-  export function isPromise(obj: any): obj is PromiseLike<unknown>;
+  export function isPromise(obj: any): obj is Promise<unknown>;
 
   export function inProgress<TResult>(it: Flow<TResult>): boolean;
   export function finished<TResult>(it: Flow<TResult>): boolean;
