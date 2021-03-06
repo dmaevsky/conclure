@@ -58,15 +58,15 @@ declare module 'conclure/effects' {
 declare module 'conclure/combinators' {
   type CombinatorResult<T extends object> = T extends any[] ? unknown[] : Record<keyof any, unknown>
 
-  type Combinator<T extends object> = (payload: T, callback?: Continuation<CombinatorResult<T>>) => Cancellation | Effect<CombinatorResult<T>, 'CPS'>;
+  export function all<T extends object>(payload: T, callback: Continuation<CombinatorResult<T>>): Cancellation;
+  export function all<T extends object>(payload: T): Effect<CombinatorResult<T>, 'CPS'>;
 
-  type Combinators = {
-    all: Combinator<unknown>;
-    any: Combinator<unknown>;
-    race: Combinator<unknown>;
-    allSettled: Combinator<unknown>;
-  }
+  export function any<T extends object>(payload: T, callback: Continuation<CombinatorResult<T>>): Cancellation;
+  export function any<T extends object>(payload: T): Effect<CombinatorResult<T>, 'CPS'>;
 
-  declare const combinators: Combinators;
-  export default combinators;
+  export function race<T extends object>(payload: T, callback: Continuation<CombinatorResult<T>>): Cancellation;
+  export function race<T extends object>(payload: T): Effect<CombinatorResult<T>, 'CPS'>;
+
+  export function allSettled<T extends object>(payload: T, callback: Continuation<CombinatorResult<T>>): Cancellation;
+  export function allSettled<T extends object>(payload: T): Effect<CombinatorResult<T>, 'CPS'>;
 }

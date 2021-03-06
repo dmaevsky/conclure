@@ -72,6 +72,9 @@ const combinator = pattern => function (payload, callback) {
   return stopKey !== undefined ? noop : cancelOthers;
 }
 
-const combinators = Object.fromEntries(Object.keys(afterAll).map(k => [k, combinator(k)]));
+export const all = combinator('all');
+export const any = combinator('any');
+export const race = combinator('race');
+export const allSettled = combinator('allSettled');
 
-export default combinators;
+const combinators = { all, any, race, allSettled };
