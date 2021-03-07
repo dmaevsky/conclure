@@ -1,7 +1,7 @@
 # ⤕ Conclure JS
 Brings cancellation and testability to your async flows.
 
-It is a tiny (core is < 200 LOC), zero dependencies generator runner.
+It is a tiny (core is < 200 lines of code), zero dependencies generator runner.
 
 Just grep and replace:
 - `async` -> `function*`
