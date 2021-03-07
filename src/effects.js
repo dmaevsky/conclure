@@ -1,5 +1,4 @@
 export const TYPE = '@@conclude-effect';
-export const isEffect = effect => Boolean(effect && effect[TYPE]);
 
 const makeEffect = (type, fn, ...args) => {
   let context = null;

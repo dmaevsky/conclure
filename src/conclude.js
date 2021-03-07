@@ -1,4 +1,4 @@
-import { isEffect, TYPE } from './effects';
+import { TYPE } from './effects';
 
 export function isIterator(obj) {
   return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.next === 'function';
@@ -8,7 +8,9 @@ export function isPromise(obj) {
   return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function' && typeof obj.catch === 'function';
 }
 
-const isFlow = it => [isPromise, isEffect, isIterator].find(is => is(it));
+export const isEffect = effect => Boolean(effect && effect[TYPE]);
+
+export const isFlow = it => [isPromise, isEffect, isIterator].find(is => is(it));
 
 const runners = new Map([
   [isPromise, runPromise],
