@@ -145,9 +145,9 @@ const withCache = (fn, expiry = 0, cache = new Map()) => function(key, ...args) 
   cache.set(key, it);
 
   whenFinished(it, ({ cancelled, error, result }) => {
-    if (cancelled || error || !expiry) cache.delete(key));
+    if (cancelled || error || !expiry) cache.delete(key);
     else setTimeout(() => cache.delete(key), expiry);
-  })
+  });
 
   return it;
 }
