@@ -57,7 +57,7 @@ You can `yield` or `return` a flow from a generator function. Conclure's runner 
 
 The runner returns the concluded value to the generator function via `.next(result)` or `.throw(error)`
 
-The return value of the generator function - an iterator - becomes the flow's *parent*.
+The return value of the generator function yielding the flow - an iterator - becomes the flow's *parent*.
 
 A flow may have multiple parents - different generators yielding the same flow. Conclure ensures that in this case the flow only runs once, but the results are delivered to all parents once concluded.
 
@@ -69,7 +69,11 @@ Unlike redux-saga, Conclure does not call `.return` with some "magic" value on t
 
 A flow is considered *finished* when it is either *concluded* (with a *result* or an *error*) or *cancelled*.
 
-You can also attach *weak* watchers to a flow using `whenFinished(flow, callback)`. The callback will be called with `{ cancelled, error, result }` when the flow has finished. Check out some examples in the Recipes section below.
+You can also attach *weak* watchers to a flow using `whenFinished(flow, callback)`. The callback will be called with `{ cancelled, error, result }` when the flow has finished.
+
+In case the flow concludes with a result or an error, the weak watchers are called *before* the result is delivered to the flow's parents, so the callback passed to `whenFinished` is roughly equivalent to the `finally` block of a redux-saga generator. However, it can be attached to promises and effects as well, and enables perfectly valid edge cases, when a flow is cancelled synchronously while the generator is running.
+
+Check out some examples in the Recipes section below.
 
 ### Effects
 ```js
