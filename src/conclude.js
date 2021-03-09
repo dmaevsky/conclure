@@ -1,11 +1,15 @@
 import { TYPE } from './effects';
 
 export function isIterator(obj) {
-  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.next === 'function';
+  return !!obj && (typeof obj === 'object' || typeof obj === 'function')
+    && typeof obj.next === 'function'
+    && typeof obj.throw === 'function';
 }
 
 export function isPromise(obj) {
-  return !!obj && (typeof obj === 'object' || typeof obj === 'function') && typeof obj.then === 'function' && typeof obj.catch === 'function';
+  return !!obj && (typeof obj === 'object' || typeof obj === 'function')
+    && typeof obj.then === 'function'
+    && typeof obj.catch === 'function';
 }
 
 export const isEffect = effect => Boolean(effect && effect[TYPE]);
