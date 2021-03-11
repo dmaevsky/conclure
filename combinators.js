@@ -72,9 +72,6 @@ const combinator = pattern => function (payload, callback) {
   return stopKey !== undefined ? noop : cancelOthers;
 }
 
-export const all = combinator('all');
-export const any = combinator('any');
-export const race = combinator('race');
-export const allSettled = combinator('allSettled');
+const combinators = Object.keys(afterOne).reduce((acc, pattern) => Object.assign(acc, { [pattern]: combinator(pattern) }), {});
 
-const combinators = { all, any, race, allSettled };
+export const { all, any, race, allSettled } = combinators;
