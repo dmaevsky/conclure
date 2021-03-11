@@ -1,7 +1,7 @@
 import test from 'ava';
-import { conclude, inProgress, getResult } from '../src/conclude';
-import { delay, call } from '../src/effects';
-import * as Conclude from '../src/combinators';
+import { conclude, inProgress, getResult } from '../conclude';
+import { delay, call } from '../effects';
+import * as Conclude from '../combinators';
 
 test('all', async t => {
   let r = null;

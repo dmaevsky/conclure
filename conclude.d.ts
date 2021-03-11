@@ -12,7 +12,7 @@ type CPSFunction<TResult> = (...args: CPS<TResult>) => Cancellation;
 type CPSFunctionNoCancel<TResult> = (...args: CPS<TResult>) => unknown;
 type CALLFunction<TResult> = (...args: unknown[]) => TResult;
 
-type TYPE = '@@conclude-effect';
+declare const TYPE = '@@conclude-effect';
 
 type EffectType = 'CALL' | 'CPS' | 'CPS_NO_CANCEL';
 type EffectTarget<TResult, T extends EffectType> =

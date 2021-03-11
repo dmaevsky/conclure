@@ -1,6 +1,6 @@
 import test from 'ava';
-import { conclude, inProgress, getResult } from '../src/conclude';
-import { cps, cps_no_cancel, call } from '../src/effects';
+import { conclude, inProgress, getResult } from '../conclude';
+import { cps, cps_no_cancel, call } from '../effects';
 
 test('cps', async t => {
   let r = null;

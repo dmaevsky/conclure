@@ -1,5 +1,5 @@
 import test from 'ava';
-import { conclude, finished, inProgress, whenFinished, getResult } from '../src/conclude';
+import { conclude, finished, inProgress, whenFinished, getResult } from '../conclude';
 
 test('conclude generator sync', t => {
   let r = null;
