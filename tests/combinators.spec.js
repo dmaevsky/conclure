@@ -1,5 +1,5 @@
 import test from 'ava';
-import { conclude, inProgress, getResult } from '../conclude';
+import { conclude, inProgress, getResult, whenFinished } from '../conclude';
 import { delay, call } from '../effects';
 import * as Conclude from '../combinators';
 
@@ -85,4 +85,20 @@ test.cb('all throwing sync', t => {
     }
   }
   conclude(g(), t.end);
+});
+
+test.cb('all, cancelling before completion', t => {
+  const promises = [
+    Promise.resolve(42),
+    Promise.reject('boom')
+  ];
+
+  const cancel = conclude(Conclude.all(promises), t.fail);
+
+  let count = 2;
+
+  whenFinished(promises[0], ({ cancelled }) => cancelled && --count === 0 && t.end(null));
+  whenFinished(promises[1], ({ cancelled }) => cancelled && --count === 0 && t.end(null));
+
+  cancel();
 });
