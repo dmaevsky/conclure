@@ -93,7 +93,12 @@ test.cb('all, cancelling before completion', t => {
     Promise.reject('boom')
   ];
 
-  const cancel = conclude(Conclude.all(promises), t.fail);
+  function* g() {
+    yield 5;
+    yield Conclude.all(promises);
+  }
+
+  const cancel = conclude(g(), t.fail);
 
   let count = 2;
 

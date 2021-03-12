@@ -92,7 +92,6 @@ export function conclude(it, callback) {
   }
 
   const subscribers = new Set();
-  let cancel;
 
   const onConclude = (error, result) => {
     finalize(it, { error, result });
@@ -117,7 +116,7 @@ export function conclude(it, callback) {
 
   const unsubscribe = subscribe(callback);
 
-  cancel = runners.get(flowType)(it, onConclude);
+  const cancel = runners.get(flowType)(it, onConclude);
 
   return unsubscribe;
 }
@@ -159,12 +158,16 @@ function runEffect({ [TYPE]: type, context, fn, args }, callback) {
 }
 
 function runIterator(it, callback) {
-  let cancel;
+  let cancel, step = 0;
+
+  const setCancel = (j, fn) => {
+    if (j >= step) cancel = fn;
+  }
 
   function iterate(error, result) {
     try {
       let cancelled = false;
-      cancel = () => cancelled = true;
+      setCancel(++step, () => cancelled = true);
 
       const { value, done } = error
         ? it.throw(error)
@@ -172,7 +175,7 @@ function runIterator(it, callback) {
 
       if (cancelled) return;
 
-      cancel = conclude(value, done ? callback : iterate);
+      setCancel(step, conclude(value, done ? callback : iterate));
     }
     catch (err) {
       callback(err);
