@@ -1,0 +1,7 @@
+.vscode
+
+# dependencies
+/node_modules
+
+# testing
+/tests

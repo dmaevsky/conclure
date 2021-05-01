@@ -1,0 +1,6 @@
+{
+  "name": "conclure/effects",
+  "private": true,
+  "main": "../dist/effects.js",
+  "module": "../src/effects.js"
+}

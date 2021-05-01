@@ -1,5 +1,5 @@
-import test from 'ava';
-import { conclude, finished, inProgress, whenFinished, getResult } from '../conclude';
+const test = require('ava');
+const { conclude, finished, inProgress, getResult, whenFinished } = require('..');
 
 test('conclude generator sync', t => {
   let r = null;

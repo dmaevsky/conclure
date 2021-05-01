@@ -1,6 +1,6 @@
-import test from 'ava';
-import { conclude, inProgress, getResult } from '../conclude';
-import { cps, cps_no_cancel, call } from '../effects';
+const test = require('ava');
+const { conclude, inProgress, getResult } = require('..');
+const { cps, cps_no_cancel, call } = require('../effects');
 
 test('cps', async t => {
   let r = null;

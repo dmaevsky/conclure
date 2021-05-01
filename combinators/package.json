@@ -1,0 +1,6 @@
+{
+  "name": "conclure/combinators",
+  "private": true,
+  "main": "../dist/combinators.js",
+  "module": "../src/combinators.js"
+}
