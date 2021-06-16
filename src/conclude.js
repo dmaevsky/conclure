@@ -105,7 +105,7 @@ export function conclude(it, callback) {
     return function unsubscribe() {
       subscribers.delete(cb);
 
-      if (subscribers.size === 0) {
+      if (subscribers.size === 0 && !resultCache.has(it)) {
         finalize(it, { cancelled: true });
         cancel();
       }
