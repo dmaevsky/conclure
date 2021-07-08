@@ -1,7 +1,7 @@
-const test = require('ava');
-const { conclude, inProgress, getResult, whenFinished } = require('..');
-const { delay, call } = require('../effects');
-const Conclude = require('../combinators');
+import test from 'ava';
+import { conclude, inProgress, getResult, whenFinished } from '../src/conclude.js';
+import { delay, call } from '../src/effects.js';
+import * as Conclude from '../src/combinators.js';
 
 test('all', async t => {
   let r = null;

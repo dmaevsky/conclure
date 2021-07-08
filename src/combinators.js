@@ -1,5 +1,5 @@
-import { conclude, isPromise } from './conclude';
-import { cps } from './effects';
+import { conclude, isPromise } from './conclude.js';
+import { cps } from './effects.js';
 
 const noop = () => {};
 

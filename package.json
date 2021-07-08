@@ -1,9 +1,15 @@
 {
   "name": "conclure",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "description": "Generator runner",
-  "main": "dist/conclude.js",
+  "type": "module",
+  "main": "src/conclude.js",
   "module": "src/conclude.js",
+  "exports": {
+    ".": "./src/conclude.js",
+    "./effects": "./src/effects.js",
+    "./combinators": "./src/combinators.js"
+  },
   "types": "conclude.d.ts",
   "repository": {
     "type": "git",
@@ -13,8 +19,6 @@
     "test": "tests"
   },
   "scripts": {
-    "build": "esbuild src/* --format=cjs --outdir=dist",
-    "prepare": "yarn build",
     "test": "ava -v"
   },
   "ava": {
@@ -34,7 +38,6 @@
   "author": "Dmitry Maevsky",
   "license": "MIT",
   "devDependencies": {
-    "ava": "^3.15.0",
-    "esbuild": "^0.11.16"
+    "ava": "^3.15.0"
   }
 }
