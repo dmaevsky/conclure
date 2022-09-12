@@ -1,6 +1,6 @@
 {
   "name": "conclure",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Generator runner",
   "type": "module",
   "main": "src/conclude.js",

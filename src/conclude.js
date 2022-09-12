@@ -1,4 +1,4 @@
-import { TYPE } from './effects.js';
+const TYPE = '@@conclude-effect';
 
 export function isIterator(obj) {
   return !!obj && (typeof obj === 'object' || typeof obj === 'function')
