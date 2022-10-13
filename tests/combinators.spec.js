@@ -43,7 +43,7 @@ test('race', async t => {
   t.deepEqual(getResult(flow).result, { fast: 42 });
 });
 
-test.cb('allSettled', t => {
+test('allSettled', t => new Promise(resolve => {
   function* g() {
     const results = yield Conclude.allSettled([
       Promise.resolve(42),
@@ -55,10 +55,10 @@ test.cb('allSettled', t => {
       { error: 'OOPS' }
     ]);
   }
-  conclude(g(), t.end);
-});
+  conclude(g(), resolve);
+}));
 
-test.cb('any', t => {
+test('any', t => new Promise(resolve => {
   function* g() {
     const result = yield Conclude.any([
       Promise.resolve(42),
@@ -67,10 +67,10 @@ test.cb('any', t => {
 
     t.is(result, 42);
   }
-  conclude(g(), t.end);
-});
+  conclude(g(), resolve);
+}));
 
-test.cb('all throwing sync', t => {
+test('all throwing sync', t => new Promise(resolve => {
   const boom = () => { throw 'BOOM'; }
 
   function* g() {
@@ -84,10 +84,10 @@ test.cb('all throwing sync', t => {
       t.deepEqual(err, { sync: 'BOOM' });
     }
   }
-  conclude(g(), t.end);
-});
+  conclude(g(), resolve);
+}));
 
-test.cb('all, cancelling before completion', t => {
+test('all, cancelling before completion', t => new Promise(resolve => {
   const promises = [
     Promise.resolve(42),
     Promise.reject('boom')
@@ -102,8 +102,9 @@ test.cb('all, cancelling before completion', t => {
 
   let count = 2;
 
-  whenFinished(promises[0], ({ cancelled }) => cancelled && --count === 0 && t.end(null));
-  whenFinished(promises[1], ({ cancelled }) => cancelled && --count === 0 && t.end(null));
+  whenFinished(promises[0], ({ cancelled }) => cancelled && --count === 0 && resolve());
+  whenFinished(promises[1], ({ cancelled }) => cancelled && --count === 0 && resolve());
 
   cancel();
-});
+  t.pass('Ava requires at least one assertion in a test');
+}));

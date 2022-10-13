@@ -85,7 +85,7 @@ test('cps_no_cancel, cancelling', async t => {
   t.deepEqual(getResult(it), { cancelled: true });
 });
 
-test.cb('call, throwing', t => {
+test('call, throwing', t => new Promise(resolve => {
   const boom = () => { throw 'BOOM'; }
 
   function* g() {
@@ -96,5 +96,5 @@ test.cb('call, throwing', t => {
       t.is(err, 'BOOM');
     }
   }
-  conclude(g(), t.end);
-});
+  conclude(g(), resolve);
+}));

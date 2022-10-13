@@ -18,7 +18,7 @@ test('conclude generator sync', t => {
   t.deepEqual(r, { error: null, result: 42 });
 });
 
-test.cb('throwing sync', t => {
+test('throwing sync', t => new Promise(resolve => {
   function* boom() {
     throw 'BOOM';
   }
@@ -31,8 +31,8 @@ test.cb('throwing sync', t => {
       t.is(err, 'BOOM');
     }
   }
-  conclude(g(), t.end);
-});
+  conclude(g(), resolve);
+}));
 
 test('simultaneous conclude', async t => {
   let r1 = null, r2 = null;
