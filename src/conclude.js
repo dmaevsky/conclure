@@ -24,21 +24,13 @@ const runners = new Map([
 
 const noop = () => {};
 
-const running = new WeakMap();
-const resultCache = new WeakMap();
-const finishWatchers = new WeakMap();
+const running = Symbol.for('@@conclude-running');
+const resultCache = Symbol.for('@@conclude-result');
+const finishWatchers = Symbol.for('@@conclude-watchers');
 
-export function inProgress(it) {
-  return running.has(it);
-}
-
-export function finished(it) {
-  return resultCache.has(it);
-}
-
-export function getResult(it) {
-  return resultCache.get(it);
-}
+export const inProgress = it => running in it;
+export const finished = it => resultCache in it;
+export const getResult = it =>it[resultCache];
 
 export function whenFinished(it, callback) {
   if (!isFlow(it)) {
@@ -46,25 +38,25 @@ export function whenFinished(it, callback) {
     return noop;
   }
 
-  if (resultCache.has(it)) {
-    callback(resultCache.get(it));
+  if (resultCache in it) {
+    callback(it[resultCache]);
     return noop;
   }
 
-  let watchers = finishWatchers.get(it);
+  let watchers = it[finishWatchers];
 
-  if (!watchers) finishWatchers.set(it, watchers = new Set([callback]));
+  if (!watchers) watchers = it[finishWatchers] = new Set([callback]);
   else watchers.add(callback);
 
   return () => watchers.delete(callback);
 }
 
 function finalize(it, payload) {
-  resultCache.set(it, payload);
-  running.delete(it);
+  it[resultCache] = payload;
+  delete it[running];
 
-  for (let cb of finishWatchers.get(it) || []) cb(payload);
-  finishWatchers.delete(it);
+  for (let cb of it[finishWatchers] || []) cb(payload);
+  delete it[finishWatchers];
 }
 
 export function conclude(it, callback) {
@@ -75,8 +67,8 @@ export function conclude(it, callback) {
     return noop;
   }
 
-  if (resultCache.has(it)) {
-    const { result, error, cancelled } = resultCache.get(it);
+  if (resultCache in it) {
+    const { result, error, cancelled } = it[resultCache];
 
     if (cancelled) return noop;
 
@@ -86,8 +78,8 @@ export function conclude(it, callback) {
     return noop;
   }
 
-  if (running.has(it)) {
-    const subscribe = running.get(it);
+  if (running in it) {
+    const subscribe = it[running];
     return subscribe(callback);
   }
 
@@ -105,14 +97,14 @@ export function conclude(it, callback) {
     return function unsubscribe() {
       subscribers.delete(cb);
 
-      if (subscribers.size === 0 && !resultCache.has(it)) {
+      if (subscribers.size === 0 && !(resultCache in it)) {
         finalize(it, { cancelled: true });
         cancel();
       }
     }
   }
 
-  running.set(it, subscribe);
+  it[running] = subscribe;
 
   const unsubscribe = subscribe(callback);
 
