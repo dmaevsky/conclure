@@ -26,6 +26,16 @@ test('all', async t => {
   t.deepEqual(r, { error: null, result: ['FOO', 'BAR', 'BAZ']});
 });
 
+test('all with the same flow twice', async t => {
+  const promise = Promise.resolve(42);
+  let result;
+
+  conclude(Conclude.all([promise, promise]), (_, r) => result = r);
+
+  await promise;
+  t.deepEqual(result, [42, 42]);
+});
+
 test('race', async t => {
   const promise = Promise.resolve(42);
 
