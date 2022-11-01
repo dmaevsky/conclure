@@ -118,3 +118,10 @@ test('all, cancelling before completion', t => new Promise(resolve => {
   cancel();
   t.pass('Ava requires at least one assertion in a test');
 }));
+
+test('combinator tag', t => {
+  for (let pattern in Conclude) {
+    const effect = Conclude[pattern]([Promise.resolve()]);
+    t.is(effect.fn.combinator, pattern);
+  }
+});

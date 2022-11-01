@@ -20,7 +20,7 @@ const afterAll = {
   allSettled: returnResults
 };
 
-const combinator = pattern => function (payload, callback) {
+const combinator = pattern => Object.assign(function (payload, callback) {
   if (!callback) return cps(combinators[pattern], payload);
 
   const results = Array.isArray(payload) ? [] : {};
@@ -70,7 +70,7 @@ const combinator = pattern => function (payload, callback) {
     });
   }
   return stopKey !== undefined ? noop : cancelOthers;
-}
+}, { combinator: pattern });
 
 const combinators = Object.keys(afterOne).reduce((acc, pattern) => Object.assign(acc, { [pattern]: combinator(pattern) }), {});
 
