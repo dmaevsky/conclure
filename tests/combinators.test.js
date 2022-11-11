@@ -1,9 +1,11 @@
-import test from 'ava';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
 import { conclude, inProgress, getResult, whenFinished } from '../src/conclude.js';
 import { delay, call } from '../src/effects.js';
 import * as Conclude from '../src/combinators.js';
 
-test('all', async t => {
+test('all', async () => {
   let r = null;
   const promise = Promise.resolve();
 
@@ -19,24 +21,24 @@ test('all', async t => {
   const flow = run(['foo', 'bar', 'baz']);
   conclude(flow, (error, result) => r = { error, result });
 
-  t.true(inProgress(flow));
+  assert(inProgress(flow));
   await promise;
-  t.false(inProgress(flow));
+  assert(!inProgress(flow));
 
-  t.deepEqual(r, { error: null, result: ['FOO', 'BAR', 'BAZ']});
+  assert.deepEqual(r, { error: null, result: ['FOO', 'BAR', 'BAZ']});
 });
 
-test('all with the same flow twice', async t => {
+test('all with the same flow twice', async () => {
   const promise = Promise.resolve(42);
   let result;
 
   conclude(Conclude.all([promise, promise]), (_, r) => result = r);
 
   await promise;
-  t.deepEqual(result, [42, 42]);
+  assert.deepEqual(result, [42, 42]);
 });
 
-test('race', async t => {
+test('race', async () => {
   const promise = Promise.resolve(42);
 
   const flow = Conclude.race({
@@ -46,21 +48,21 @@ test('race', async t => {
 
   conclude(flow, e => e);
 
-  t.true(inProgress(flow));
+  assert(inProgress(flow));
   await promise;
-  t.false(inProgress(flow));
+  assert(!inProgress(flow));
 
-  t.deepEqual(getResult(flow).result, { fast: 42 });
+  assert.deepEqual(getResult(flow).result, { fast: 42 });
 });
 
-test('allSettled', t => new Promise(resolve => {
+test('allSettled', () => new Promise(resolve => {
   function* g() {
     const results = yield Conclude.allSettled([
       Promise.resolve(42),
       Promise.reject('OOPS')
     ]);
 
-    t.deepEqual(results, [
+    assert.deepEqual(results, [
       { result: 42 },
       { error: 'OOPS' }
     ]);
@@ -68,19 +70,19 @@ test('allSettled', t => new Promise(resolve => {
   conclude(g(), resolve);
 }));
 
-test('any', t => new Promise(resolve => {
+test('any', () => new Promise(resolve => {
   function* g() {
     const result = yield Conclude.any([
       Promise.resolve(42),
       Promise.reject('OOPS')
     ]);
 
-    t.is(result, 42);
+    assert.equal(result, 42);
   }
   conclude(g(), resolve);
 }));
 
-test('all throwing sync', t => new Promise(resolve => {
+test('all throwing sync', () => new Promise(resolve => {
   const boom = () => { throw 'BOOM'; }
 
   function* g() {
@@ -91,13 +93,13 @@ test('all throwing sync', t => new Promise(resolve => {
       });
     }
     catch (err) {
-      t.deepEqual(err, { sync: 'BOOM' });
+      assert.deepEqual(err, { sync: 'BOOM' });
     }
   }
   conclude(g(), resolve);
 }));
 
-test('all, cancelling before completion', t => new Promise(resolve => {
+test('all, cancelling before completion', () => new Promise(resolve => {
   const promises = [
     Promise.resolve(42),
     Promise.reject('boom')
@@ -108,7 +110,7 @@ test('all, cancelling before completion', t => new Promise(resolve => {
     yield Conclude.all(promises);
   }
 
-  const cancel = conclude(g(), t.fail);
+  const cancel = conclude(g(), () => assert.fail('Flow is NOT cancelled'));
 
   let count = 2;
 
@@ -116,12 +118,11 @@ test('all, cancelling before completion', t => new Promise(resolve => {
   whenFinished(promises[1], ({ cancelled }) => cancelled && --count === 0 && resolve());
 
   cancel();
-  t.pass('Ava requires at least one assertion in a test');
 }));
 
-test('combinator tag', t => {
+test('combinator tag', () => {
   for (let pattern in Conclude) {
     const effect = Conclude[pattern]([Promise.resolve()]);
-    t.is(effect.fn.combinator, pattern);
+    assert.equal(effect.fn.combinator, pattern);
   }
 });

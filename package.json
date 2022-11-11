@@ -15,16 +15,8 @@
     "type": "git",
     "url": "git+https://github.com/dmaevsky/conclure.git"
   },
-  "directories": {
-    "test": "tests"
-  },
   "scripts": {
-    "test": "ava -v"
-  },
-  "ava": {
-    "files": [
-      "tests/**/*"
-    ]
+    "test": "find tests -type f -name '*.test.js' -exec echo \\# utap-src:{} \\; -exec node {} \\; | utap"
   },
   "keywords": [
     "generator",
@@ -38,6 +30,6 @@
   "author": "Dmitry Maevsky",
   "license": "MIT",
   "devDependencies": {
-    "ava": "^4.3.3"
+    "utap": "^0.1.1"
   }
 }

@@ -1,8 +1,10 @@
-import test from 'ava';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
 import { conclude, inProgress, getResult } from '../src/conclude.js';
 import { cps, cps_no_cancel, call } from '../src/effects.js';
 
-test('cps', async t => {
+test('cps', async () => {
   let r = null;
   let promise;
 
@@ -17,14 +19,14 @@ test('cps', async t => {
   const it = run(100);
   conclude(it, (error, result) => r = { error, result });
 
-  t.true(inProgress(it));
+  assert(inProgress(it));
   await promise;
-  t.false(inProgress(it));
+  assert(!inProgress(it));
 
-  t.deepEqual(r, { error: null, result: 142 });
+  assert.deepEqual(r, { error: null, result: 142 });
 });
 
-test('call', async t => {
+test('call', async () => {
   let r = null;
   let promise;
 
@@ -39,14 +41,14 @@ test('call', async t => {
   const it = run(100);
   conclude(it, (error, result) => r = { error, result });
 
-  t.true(inProgress(it));
+  assert(inProgress(it));
   await promise;
-  t.false(inProgress(it));
+  assert(!inProgress(it));
 
-  t.deepEqual(r, { error: null, result: 142 });
+  assert.deepEqual(r, { error: null, result: 142 });
 });
 
-test('cps_no_cancel', async t => {
+test('cps_no_cancel', async () => {
   let r = null;
   let promise;
 
@@ -57,14 +59,14 @@ test('cps_no_cancel', async t => {
   const it = cps_no_cancel(plus42, 100);
   conclude(it, (error, result) => r = { error, result });
 
-  t.true(inProgress(it));
+  assert(inProgress(it));
   await promise;
-  t.false(inProgress(it));
+  assert(!inProgress(it));
 
-  t.deepEqual(r, { error: null, result: 142 });
+  assert.deepEqual(r, { error: null, result: 142 });
 });
 
-test('cps_no_cancel, cancelling', async t => {
+test('cps_no_cancel, cancelling', async () => {
   let r = null;
   let promise;
 
@@ -75,17 +77,17 @@ test('cps_no_cancel, cancelling', async t => {
   const it = cps_no_cancel(plus42, 100);
   const cancel = conclude(it, (error, result) => r = { error, result });
 
-  t.true(inProgress(it));
+  assert(inProgress(it));
   cancel();
-  t.false(inProgress(it));
+  assert(!inProgress(it));
 
   await promise;
 
-  t.is(r, null);
-  t.deepEqual(getResult(it), { cancelled: true });
+  assert.equal(r, null);
+  assert.deepEqual(getResult(it), { cancelled: true });
 });
 
-test('call, throwing', t => new Promise(resolve => {
+test('call, throwing', () => new Promise(resolve => {
   const boom = () => { throw 'BOOM'; }
 
   function* g() {
@@ -93,7 +95,7 @@ test('call, throwing', t => new Promise(resolve => {
       yield call(boom);
     }
     catch (err) {
-      t.is(err, 'BOOM');
+      assert.equal(err, 'BOOM');
     }
   }
   conclude(g(), resolve);
