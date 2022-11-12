@@ -30,6 +30,6 @@
   "author": "Dmitry Maevsky",
   "license": "MIT",
   "devDependencies": {
-    "utap": "^0.1.1"
+    "utap": "^0.1.2"
   }
 }
