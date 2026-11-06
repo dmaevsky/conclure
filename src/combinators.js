@@ -6,6 +6,7 @@ const noop = () => {};
 const returnResults = (_, results, callback) => callback(null, results);
 const throwErrors = (errors, _, callback) => callback(errors);
 
+// What to do when one flow concludes: `stop` means the combinator concludes right away with this error / result
 const afterOne = {
   all: (error, result) => ({ error, result, stop: error }),
   any: (error, result) => ({ error, result, stop: !error }),
@@ -13,16 +14,21 @@ const afterOne = {
   allSettled: (error, result) => ({ result: error ? { error } : { result }, stop: false }),
 };
 
+// What to do when all flows have concluded without stopping
 const afterAll = {
   all: returnResults,
   any: throwErrors,
-  race: noop,
+  race: noop, // unreachable unless the payload is empty: race([]) never concludes, same as Promise.race([])
   allSettled: returnResults
 };
 
+// Each combinator is a CPS function. Called without a callback, it returns a CPS effect on itself,
+// so it can be yielded lazily. The function is tagged with `combinator: pattern`
+// so that effect interpreters and tests can recognize it: `effect.fn.combinator === 'all'`.
 const combinator = pattern => Object.assign(function (payload, callback) {
   if (!callback) return cps(combinators[pattern], payload);
 
+  // Payload is either an array or a plain object; results and errors mirror its shape
   const results = Array.isArray(payload) ? [] : {};
   const errors = Array.isArray(payload) ? [] : {};
 
@@ -43,9 +49,10 @@ const combinator = pattern => Object.assign(function (payload, callback) {
   }
 
   for (let k in payload) {
+    // A flow has already concluded the combinator synchronously: do not start the remaining flows
     if (stopKey !== undefined) {
       // Prevent unhandled rejections when stopped synchronously
-      if (isPromise(payload[k])) payload[k].catch(noop);
+      if (isPromise(payload[k])) payload[k].then(undefined, noop);
       continue;
     }
 
@@ -69,6 +76,8 @@ const combinator = pattern => Object.assign(function (payload, callback) {
       }
     });
   }
+
+  // If the combinator concluded synchronously, all the other flows have been cancelled already
   return stopKey !== undefined ? noop : cancelOthers;
 }, { combinator: pattern });
 
