@@ -1,6 +1,6 @@
 {
   "name": "conclure",
-  "version": "2.3.0",
+  "version": "3.0.0",
   "description": "Tiny zero-dependency generator runner that brings cancellation and testability to async flows",
   "type": "module",
   "main": "src/conclude.js",

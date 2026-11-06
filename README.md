@@ -217,5 +217,16 @@ function withSpinner(flow) {
 conclude(withSpinner(cachedFetch(FILE_URL)), (err, res) => console.log({ err, res }));
 ```
 
+## Upgrading from 2.x
+**Callbacks that throw.** In 2.x, if a callback passed to `conclude` threw, it was called a second time with the exception as the error. Now the exception propagates instead: `conclude()` throws for synchronous flows, and for promise flows you get an unhandled rejection. If you relied on the error branch catching bugs in the success branch, handle them in the callback itself.
+
+**Thenables.** Any object with a `then` method is now concluded as a promise; 2.x also required `catch`. An object that is both an iterator and a thenable is concluded as an iterator.
+
+**TypeScript.**
+- Types are no longer global. Import them: `import type { Flow, Effect, Continuation, Cancellation, FinishedState } from 'conclure'`.
+- Results are inferred from the flow, and `call` / `cps` check their arguments against the target function's signature. Remove the casts and annotations that worked around `unknown`, and fix any mismatches the new checks report.
+- `getResult` returns `undefined` for flows that have not finished, and `FinishedState` is a union: narrow on `cancelled` / `error` before reading `result`.
+- Requires TypeScript 5.0 or later.
+
 ## License
 MIT
