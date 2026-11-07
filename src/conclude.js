@@ -243,7 +243,6 @@ function runIterator(it, callback) {
 
         if (cancelled) {
           // Cancelled while concluding the value: the value may still be running, so unsubscribe from it
-          bounced = null;
           cancelValue();
           return;
         }
@@ -262,8 +261,8 @@ function runIterator(it, callback) {
     }
     finally {
       looping = false;
-      // Normally already null. Cleared in case an exception thrown downstream unwound the loop mid-step,
-      // so a stale outcome is never fed to the generator later.
+      // Whichever way the loop exits (finished, waiting on an async value, cancelled mid-step,
+      // or unwound by an exception thrown downstream), a stale outcome must never be fed to the generator later
       bounced = null;
     }
   }
